@@ -11,12 +11,18 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.17
         version: 4.1.17(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2))
+      dropzone:
+        specifier: 6.0.0-beta.2
+        version: 6.0.0-beta.2
       react:
         specifier: ^19.2.0
         version: 19.2.1
       react-dom:
         specifier: ^19.2.0
         version: 19.2.1(react@19.2.1)
+      react-sketch-canvas:
+        specifier: ^6.2.0
+        version: 6.2.0(react@19.2.1)
       tailwindcss:
         specifier: ^4.1.17
         version: 4.1.17
@@ -24,6 +30,9 @@ importers:
       '@eslint/js':
         specifier: ^9.39.1
         version: 9.39.1
+      '@types/dropzone':
+        specifier: ^5.7.9
+        version: 5.7.9
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.1
@@ -482,6 +491,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@swc/helpers@0.2.14':
+    resolution: {integrity: sha512-wpCQMhf5p5GhNg2MmGKXzUNwxe7zRiCsmqYsamez2beP7mKPCSiu+BjZcdN95yYSzO857kr0VfQewmGpS77nqA==}
+
   '@tailwindcss/node@4.1.17':
     resolution: {integrity: sha512-csIkHIgLb3JisEFQ0vxr2Y57GUNYh447C8xzwj89U/8fdW8LhProdxvnVH6U8M2Y73QKiTIH+LWbK3V2BBZsAg==}
 
@@ -584,8 +596,14 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
+  '@types/dropzone@5.7.9':
+    resolution: {integrity: sha512-c6IlUz+DeQ4gANzJKn8fdP5rO6UyDNOyWLjfPbDRUHCNsXaAVKQOpuOv6LWEyvaK7pLqmoIpvSIlvBgGsk1vGw==}
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/jquery@3.5.33':
+    resolution: {integrity: sha512-SeyVJXlCZpEki5F0ghuYe+L+PprQta6nRZqhONt9F13dWBtR/ftoaIbdRQ7cis7womE+X2LKhsDdDtkkDhJS6g==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -600,6 +618,9 @@ packages:
 
   '@types/react@19.2.7':
     resolution: {integrity: sha512-MWtvHrGZLFttgeEj28VXHxpmwYbor/ATPYbBfSFZEIRK0ecCFLl2Qo55z52Hss+UV9CRN7trSeq1zbgx7YDWWg==}
+
+  '@types/sizzle@2.3.10':
+    resolution: {integrity: sha512-TC0dmN0K8YcWEAEfiPi5gJP14eJe30TTGjkvek3iM/1NdHHsdCA/Td6GvNndMOo/iSnIsZ4HuuhrYPDAmbxzww==}
 
   '@typescript-eslint/eslint-plugin@8.48.1':
     resolution: {integrity: sha512-X63hI1bxl5ohelzr0LY5coufyl0LJNthld+abwxpCoo6Gq+hSqhKwci7MUWkXo67mzgUK6YFByhmaHmUcuBJmA==}
@@ -750,6 +771,9 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  dropzone@6.0.0-beta.2:
+    resolution: {integrity: sha512-k44yLuFFhRk53M8zP71FaaNzJYIzr99SKmpbO/oZKNslDjNXQsBTdfLs+iONd0U0L94zzlFzRnFdqbLcs7h9fQ==}
 
   electron-to-chromium@1.5.266:
     resolution: {integrity: sha512-kgWEglXvkEfMH7rxP5OSZZwnaDWT7J9EoZCujhnpLbfi0bbNtRkgdX2E3gt0Uer11c61qCYktB3hwkAS325sJg==}
@@ -951,6 +975,9 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
+  just-extend@5.1.1:
+    resolution: {integrity: sha512-b+z6yF1d4EOyDgylzQo5IminlUmzSeqR1hs/bzjBNjuGras4FXq/6TrzjxfN0j+TmI0ltJzTNlqXUMCniciwKQ==}
+
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -1113,6 +1140,12 @@ packages:
   react-refresh@0.18.0:
     resolution: {integrity: sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw==}
     engines: {node: '>=0.10.0'}
+
+  react-sketch-canvas@6.2.0:
+    resolution: {integrity: sha512-Z56RQN0viV9W3Y+DpZfQMi2lf3pO+UB4l+cMwnx7j7pQ9WHkQwN+qZKVFGANgpjXQMyY42NODF/DXjuKPCMf1w==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16.8'
 
   react@19.2.1:
     resolution: {integrity: sha512-DGrYcCWK7tvYMnWh79yrPHt+vdx9tY+1gPZa7nJQtO/p8bLTDaHp4dzwEhQB7pZ4Xe3ok4XKuEPrVuc+wlpkmw==}
@@ -1605,6 +1638,8 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.53.3':
     optional: true
 
+  '@swc/helpers@0.2.14': {}
+
   '@tailwindcss/node@4.1.17':
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -1694,7 +1729,15 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.5
 
+  '@types/dropzone@5.7.9':
+    dependencies:
+      '@types/jquery': 3.5.33
+
   '@types/estree@1.0.8': {}
+
+  '@types/jquery@3.5.33':
+    dependencies:
+      '@types/sizzle': 2.3.10
 
   '@types/json-schema@7.0.15': {}
 
@@ -1709,6 +1752,8 @@ snapshots:
   '@types/react@19.2.7':
     dependencies:
       csstype: 3.2.3
+
+  '@types/sizzle@2.3.10': {}
 
   '@typescript-eslint/eslint-plugin@8.48.1(@typescript-eslint/parser@8.48.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
     dependencies:
@@ -1888,6 +1933,11 @@ snapshots:
   deep-is@0.1.4: {}
 
   detect-libc@2.1.2: {}
+
+  dropzone@6.0.0-beta.2:
+    dependencies:
+      '@swc/helpers': 0.2.14
+      just-extend: 5.1.1
 
   electron-to-chromium@1.5.266: {}
 
@@ -2100,6 +2150,8 @@ snapshots:
 
   json5@2.2.3: {}
 
+  just-extend@5.1.1: {}
+
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -2233,6 +2285,10 @@ snapshots:
       scheduler: 0.27.0
 
   react-refresh@0.18.0: {}
+
+  react-sketch-canvas@6.2.0(react@19.2.1):
+    dependencies:
+      react: 19.2.1
 
   react@19.2.1: {}
 
