@@ -30,7 +30,7 @@ export const DropField = () => {
       </div>
       <form 
         ref={dropzoneRef} 
-        className="dropzone my-custom-class border p-4 rounded-lg"
+        className="flex items-center justify-center border-dashed border-2 border-gray-400 rounded p-8 bg-white/50 hover:bg-white/70 transition-colors cursor-pointer min-h-96"
         >
         <div className="dz-message">
           Drop files here or click to upload

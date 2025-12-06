@@ -1,12 +1,6 @@
 import { useRef } from "react";
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from "react-sketch-canvas";
 
-const styles = {
-  border: '0.0625rem solid #9c9c9c',
-  borderRadius: '0.25rem',
-  color: 'black',
-};
-
 export const DrawField = () => {
   const canvasRef = useRef<ReactSketchCanvasRef>(null);
 
@@ -16,14 +10,15 @@ export const DrawField = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-center text-2xl font-semibold pb-2">
+      <div className="flex items-center justify-center text-2xl font-semibold pb-4">
         DRAW 
       </div>
       <ReactSketchCanvas
         ref={canvasRef}
-        style={styles}
         strokeWidth={4}
+        height="96px"
         strokeColor="black"
+        className="min-h-96"
       />
       <div className="flex justify-between">
         <button 
