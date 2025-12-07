@@ -28,7 +28,7 @@ export const DrawField = () => {
           Clear
         </button>
         <button
-          className="px-4 py-1 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600 transition-colors"
+          className="px-6 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600 transition-colors"
         >
           Recognize
         </button>

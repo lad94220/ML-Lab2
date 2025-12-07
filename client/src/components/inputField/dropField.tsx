@@ -1,44 +1,132 @@
-import Dropzone from "dropzone";
-import "dropzone/dist/dropzone.css";
-import { useEffect, useRef } from "react";
-
-Dropzone.autoDiscover = false;
+import { useRef, useState } from "react";
+import Uppy from "@uppy/core";
 
 export const DropField = () => {
-  const dropzoneRef = useRef<HTMLFormElement>(null);
+  const uppyRef = useRef<Uppy | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [file, setFile] = useState<{ name: string; size: number; preview?: string } | null>(null);
 
-  useEffect(() => {
-    if (!dropzoneRef.current) return;
+  if (!uppyRef.current) {
+    uppyRef.current = new Uppy({
+      restrictions: {
+        maxNumberOfFiles: 1,
+        allowedFileTypes: ['image/*']
+      }
+    });
 
-    const dropzone = new Dropzone(dropzoneRef.current, {
-      url: "/file/post",
-      maxFiles: 1,
-      acceptedFiles: "image/*",
-      addRemoveLinks: true,
-      dictDefaultMessage: "Drop files here or click to upload",
-    }); 
+    uppyRef.current.on('file-added', (uppyFile) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFile({
+          name: uppyFile.name,
+          size: uppyFile.size as number,
+          preview: e.target?.result as string
+        });
+      };
+      reader.readAsDataURL(uppyFile.data as Blob);
+    });
+  }
 
-    return () => {
-      dropzone.destroy();
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type.startsWith('image/')) {
+      uppyRef.current?.addFile({
+        name: droppedFile.name,
+        type: droppedFile.type,
+        data: droppedFile,
+      });
     }
-  }, []);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      uppyRef.current?.addFile({
+        name: selectedFile.name,
+        type: selectedFile.type,
+        data: selectedFile,
+      });
+    }
+  };
+
+  const handleRemove = () => {
+    uppyRef.current?.cancelAll();
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-center text-2xl font-semibold pb-8">
+    <div className="space-y-6">
+      <div className="flex items-center justify-center text-2xl font-semibold">
         INPUT FILES
       </div>
-      <form 
-        ref={dropzoneRef} 
-        className="flex items-center justify-center border-dashed border-2 border-gray-400 rounded p-8 bg-white/50 hover:bg-white/70 transition-colors cursor-pointer min-h-96"
-        >
-        <div className="dz-message">
-          Drop files here or click to upload
-        </div>
-      </form>
-      <div className="flex justify-between relative mb-8">
+      
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`min-h-80 flex items-center justify-center border-dashed border-2 rounded-lg cursor-pointer transition-all duration-200 
+          ${isDragging 
+            ? 'border-blue-500 bg-blue-50' 
+            : 'border-gray-400 bg-white/50 hover:bg-white/70'
+          }`}
+      >
+        {!file ? (
+          <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+            <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p className="text-lg text-gray-600 mb-2">Drop an image here or click to select</p>
+            <p className="text-sm text-gray-400">Supports: JPG, PNG, GIF</p>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center p-8">
+            {file.preview && (
+              <img src={file.preview} alt={file.name} className="max-h-48 mb-4 rounded shadow-md" />
+            )}
+            <p className="text-gray-700 font-medium">{file.name}</p>
+            <p className="text-gray-500 text-sm">{(file.size / 1024).toFixed(2)} KB</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemove();
+              }}
+              className="mt-4 text-red-500 hover:text-red-700 underline"
+            >
+              Remove file
+            </button>
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      <div className="flex justify-end">
         <button
-          className="px-4 py-1 absolute right-0 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600 transition-colors"
+          className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+          disabled={!file}
         >
           Recognize
         </button>
