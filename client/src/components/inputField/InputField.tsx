@@ -12,7 +12,7 @@ export const InputField = () => {
   }
 
   return (
-    <div className="space-y-8 w-3xl p-8 rounded-lg shadow-lg relative bg-white/30">
+    <div className="space-y-8 w-3xl p-8 rounded-lg shadow-lg relative bg-white/30 mt-20">
       <div className="absolute left-0 -top-13 flex flex-row gap-2">
         <button 
           className={`w-26 h-9 cursor-pointer rounded-2xl border transition-all

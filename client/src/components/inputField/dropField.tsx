@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
 import Uppy from "@uppy/core";
+import { PredictionDisplay } from "./PredictionDisplay";
 
 export const DropField = () => {
   const uppyRef = useRef<Uppy | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<{ name: string; size: number; preview?: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [prediction, setPrediction] = useState<any>(null);
 
   if (!uppyRef.current) {
     uppyRef.current = new Uppy({
@@ -65,8 +68,37 @@ export const DropField = () => {
   const handleRemove = () => {
     uppyRef.current?.cancelAll();
     setFile(null);
+    setPrediction(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRecognize = async () => {
+    if (!uppyRef.current) return;
+
+    const files = uppyRef.current.getFiles();
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    formData.append('file', files[0].data as Blob, files[0].name);
+
+    setIsLoading(true);
+    setPrediction(null);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URI}/predict`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      setPrediction(result);
+    } catch (error) {
+      console.error('Error:', error);
+      setPrediction({ error: 'Failed to connect to server' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,11 +158,14 @@ export const DropField = () => {
       <div className="flex justify-end">
         <button
           className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-          disabled={!file}
+          disabled={!file || isLoading}
+          onClick={handleRecognize}
         >
-          Recognize
+          {isLoading ? 'Processing...' : 'Recognize'}
         </button>
       </div>
+
+      <PredictionDisplay prediction={prediction} />
     </div>
   )
 }

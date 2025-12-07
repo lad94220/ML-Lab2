@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "@uppy/core": "^5.2.0",
     "@uppy/drag-drop": "^5.1.0",
+    "dotenv": "^17.2.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-sketch-canvas": "^6.2.0",
