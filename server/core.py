@@ -249,52 +249,69 @@ def load_model():
   
   return model_raw, model_edges, model_pca
 
-def process_image(image_path):
-    # 1. Đọc ảnh (Grayscale)
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
-    # 2. Đảo ngược màu (nếu background trắng)
-    # Nếu dùng canvas HTML5 getImagedata thường nền trong suốt hoặc trắng
-    img = cv2.bitwise_not(img) 
+def process_image(image_data):
+    # 2. Chuyển sang Grayscale
+    gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
 
-    # 3. Loại bỏ nhiễu và làm đậm nét (Threshold)
-    _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+    # 3. Dùng Otsu's Thresholding để tự động tìm ngưỡng tách nền và chữ
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    # 4. Tìm Bounding Box để crop sát chữ số
-    coords = cv2.findNonZero(img)
+    # 4. TỰ ĐỘNG XÁC ĐỊNH NỀN (Logic quan trọng nhất)
+    # Đếm số lượng pixel trắng (255) và đen (0)
+    count_white = cv2.countNonZero(binary)
+    count_black = binary.size - count_white
+
+    # Nguyên tắc: Phần nào chiếm diện tích lớn hơn, đó là NỀN.
+    # Chúng ta cần Nền Đen (0) và Chữ Trắng (255).
+    if count_white > count_black:
+        # Nếu pixel trắng nhiều hơn -> Nền đang là màu trắng -> Cần đảo ngược
+        binary = cv2.bitwise_not(binary)
+    
+    # --- Tới đây ảnh chắc chắn là Nền Đen - Chữ Trắng ---
+    
+    # 5. Loại bỏ nhiễu (Optional nhưng khuyên dùng cho ảnh chụp/vẽ xấu)
+    # Dùng phép đóng (Closing) để nối liền các nét đứt nếu có
+    kernel = np.ones((3,3), np.uint8)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+
+    # 6. Tìm Bounding Box (như cũ)
+    coords = cv2.findNonZero(binary)
+    if coords is None: # Trường hợp không tìm thấy nét vẽ nào
+        return np.zeros((1, 784)) 
+        
     x, y, w, h = cv2.boundingRect(coords)
-    crop = img[y:y+h, x:x+w]
+    crop = binary[y:y+h, x:x+w]
 
-    # 5. Resize về 20x20 (giữ tỷ lệ) và đặt vào tâm 28x28
-    # Tạo ảnh nền đen 28x28
+    # 7. Resize và Padding (như cũ)
     final_img = np.zeros((28, 28), dtype=np.uint8)
     
-    # Tính toán tỉ lệ resize sao cho cạnh lớn nhất là 20
-    scale = 20.0 / max(w, h)
+    # Thêm 1 chút padding khi tính scale để chữ không chạm mép quá sát
+    scale = 20.0 / max(w, h) 
     new_w, new_h = int(w * scale), int(h * scale)
+    
+    # Check để tránh lỗi resize ảnh quá nhỏ (0x0)
+    if new_w <= 0 or new_h <= 0: return np.zeros((1, 784))
+    
     resized_crop = cv2.resize(crop, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
-    # Tính toạ độ để đặt vào giữa
     x_offset = (28 - new_w) // 2
     y_offset = (28 - new_h) // 2
-    
     final_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_crop
 
-    # 6. Normalize và Reshape cho model Softmax
+    # 8. Normalize và Flatten
     final_img = final_img / 255.0
-    final_img = final_img.reshape(1, 784) # Flatten cho Softmax
+    final_img = final_img.reshape(1, 784)
     
     return final_img
 
 def predict(image_data):
-  image_data = preprocess_image(image_data)
+  image_data = process_image(image_data)
   model_raw, model_edges, model_pca = load_model()
 
   # Đảm bảo image_data có shape (1, 28, 28)
   if image_data.ndim == 2:
     image_data = np.expand_dims(image_data, axis=0)
-  elif image_data.ndim != 3 or image_data.shape[0] != 1:
-    return {"error": "Invalid image data shape. Expected (28, 28) or (1, 28, 28)."}
 
   feature_engineer = FeatureEngineer()
 
