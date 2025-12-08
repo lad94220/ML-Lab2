@@ -249,7 +249,45 @@ def load_model():
   
   return model_raw, model_edges, model_pca
 
+def process_image(image_path):
+    # 1. Đọc ảnh (Grayscale)
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+    # 2. Đảo ngược màu (nếu background trắng)
+    # Nếu dùng canvas HTML5 getImagedata thường nền trong suốt hoặc trắng
+    img = cv2.bitwise_not(img) 
+
+    # 3. Loại bỏ nhiễu và làm đậm nét (Threshold)
+    _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+
+    # 4. Tìm Bounding Box để crop sát chữ số
+    coords = cv2.findNonZero(img)
+    x, y, w, h = cv2.boundingRect(coords)
+    crop = img[y:y+h, x:x+w]
+
+    # 5. Resize về 20x20 (giữ tỷ lệ) và đặt vào tâm 28x28
+    # Tạo ảnh nền đen 28x28
+    final_img = np.zeros((28, 28), dtype=np.uint8)
+    
+    # Tính toán tỉ lệ resize sao cho cạnh lớn nhất là 20
+    scale = 20.0 / max(w, h)
+    new_w, new_h = int(w * scale), int(h * scale)
+    resized_crop = cv2.resize(crop, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    # Tính toạ độ để đặt vào giữa
+    x_offset = (28 - new_w) // 2
+    y_offset = (28 - new_h) // 2
+    
+    final_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_crop
+
+    # 6. Normalize và Reshape cho model Softmax
+    final_img = final_img / 255.0
+    final_img = final_img.reshape(1, 784) # Flatten cho Softmax
+    
+    return final_img
+
 def predict(image_data):
+  image_data = preprocess_image(image_data)
   model_raw, model_edges, model_pca = load_model()
 
   # Đảm bảo image_data có shape (1, 28, 28)
