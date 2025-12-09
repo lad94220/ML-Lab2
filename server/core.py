@@ -65,29 +65,6 @@ class FeatureEngineer:
 
         else:
             raise ValueError("Method sai! Chọn 'raw', 'edges', hoặc 'pca'.")
-    
-    def save_pca(self, filename="pca_params.pkl"):
-        """Save PCA parameters to file."""
-        if self.mean is None or self.eigenvectors is None:
-            raise ValueError("PCA parameters not available. Train first with method='pca' and is_training=True.")
-        with open(filename, 'wb') as f:
-            pickle.dump({
-                'mean': self.mean,
-                'eigenvectors': self.eigenvectors,
-                'n_components': self.n_components,
-                'variance_ratio': self.variance_ratio
-            }, f)
-        print(f"PCA parameters saved to {filename}")
-    
-    def load_pca(self, filename="pca_params.pkl"):
-        """Load PCA parameters from file."""
-        with open(filename, 'rb') as f:
-            params = pickle.load(f)
-        self.mean = params['mean']
-        self.eigenvectors = params['eigenvectors']
-        self.n_components = params['n_components']
-        self.variance_ratio = params['variance_ratio']
-        print(f"PCA parameters loaded from {filename}")
           
 # SOFTMAX REGRESSION MODEL
 class SoftmaxRegression:
@@ -222,43 +199,49 @@ class SoftmaxRegression:
         print(f"Model saved to {filename}")
     
     @classmethod
-    def load_model(cls, filename):
-        """Load model weights from file and return a SoftmaxRegression instance."""
-        with open(filename, 'rb') as f:
-            weights = pickle.load(f)
-        
-        # Create a new instance
+    def load_model(cls, filename, feature_engineer=None):
+        with open(filename, "rb") as f:
+            data = pickle.load(f)
+
         model = cls()
-        model.W = weights['W']
-        model.b = weights['b']
+        model.W = data["W"]
+        model.b = data["b"]
+
+        if "pca" in data and feature_engineer is not None:
+            p = data["pca"]
+            feature_engineer.mean = p["mean"]
+            feature_engineer.eigenvectors = p["eigenvectors"]
+            feature_engineer.n_components = p["n_components"]
+            feature_engineer.variance_ratio = p["variance_ratio"]
+            print("PCA parameters loaded into feature engineer.")
+
         return model
         
         
 def load_model():
+  feature_engineer = FeatureEngineer()
   # Get the directory where this script is located
   script_dir = os.path.dirname(os.path.abspath(__file__))
   models_dir = os.path.join(script_dir, "..", "models")
   
-  model_raw = SoftmaxRegression.load_model(os.path.join(models_dir, "softmax_model_raw.pkl"))
-  model_edges = SoftmaxRegression.load_model(os.path.join(models_dir, "softmax_model_edges.pkl"))
-  model_pca = SoftmaxRegression.load_model(os.path.join(models_dir, "softmax_model_pca.pkl"))
+  model_raw = SoftmaxRegression.load_model(os.path.join(models_dir, "softmax_model_raw.pkl"), feature_engineer)
+  model_edges = SoftmaxRegression.load_model(os.path.join(models_dir, "softmax_model_edges.pkl"), feature_engineer)
+  model_pca = SoftmaxRegression.load_model(os.path.join(models_dir, "softmax_model_pca.pkl"), feature_engineer)
   
   print(model_raw.W.shape, model_raw.b.shape)
   print(model_edges.W.shape, model_edges.b.shape)
   print(model_pca.W.shape, model_pca.b.shape)
   
-  return model_raw, model_edges, model_pca
+  return model_raw, model_edges, model_pca, feature_engineer
 
 def predict(image_data):
-  model_raw, model_edges, model_pca = load_model()
+  model_raw, model_edges, model_pca, feature_engineer = load_model()
 
   # Đảm bảo image_data có shape (1, 28, 28)
   if image_data.ndim == 2:
     image_data = np.expand_dims(image_data, axis=0)
   elif image_data.ndim != 3 or image_data.shape[0] != 1:
     return {"error": "Invalid image data shape. Expected (28, 28) or (1, 28, 28)."}
-
-  feature_engineer = FeatureEngineer()
 
   # Dự đoán với mô hình 'raw'
   X_raw_processed = feature_engineer.process(image_data, method='raw', is_training=False)
@@ -271,19 +254,9 @@ def predict(image_data):
   proba_edges = model_edges.predict_proba(X_edges_processed)[:, 0].tolist()
   
   # Load PCA parameters and predict
-  feature_engineer_pca = FeatureEngineer()
-  script_dir = os.path.dirname(os.path.abspath(__file__))
-  pca_params_path = os.path.join(script_dir, "..", "models", "pca_params.pkl")
-  
-  if os.path.exists(pca_params_path):
-      feature_engineer_pca.load_pca(pca_params_path)
-      X_pca_processed = feature_engineer_pca.process(image_data, method='pca', is_training=False)
-      pred_pca = model_pca.predict(X_pca_processed)[0]
-      proba_pca = model_pca.predict_proba(X_pca_processed)[:, 0].tolist()
-  else:
-      print(f"Warning: PCA parameters not found. Please save them using fe.save_pca('{pca_params_path}')")
-      pred_pca = -1
-      proba_pca = [0.0] * 10
+  X_pca_processed = feature_engineer.process(image_data, method='pca', is_training=False)
+  pred_pca = model_pca.predict(X_pca_processed)[0]
+  proba_pca = model_pca.predict_proba(X_pca_processed)[:, 0].tolist()  
   
   result = {
       "raw": {"prediction": int(pred_raw), "probabilities": proba_raw},
