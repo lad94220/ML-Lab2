@@ -24,26 +24,54 @@ app.add_middleware(
 )
 
 def process_image(image: Image.Image):
-  """Common image processing logic - normalize to 28x28 grayscale"""
-  # Convert to grayscale if needed
-  if image.mode != 'L':
-    image = image.convert('L')
-  
-  # Always resize to ensure 28x28 regardless of input size
-  if image.size != (28, 28):
-    image = image.resize((28, 28), Image.Resampling.LANCZOS)
-  
-  # Convert to numpy array
-  img_array = np.array(image, dtype=np.uint8)
-  
-  # Ensure values are in range [0, 255]
-  img_array = np.clip(img_array, 0, 255).astype(np.uint8)
-  
-  # Add batch dimension: (28, 28) -> (1, 28, 28)
-  img_array = np.expand_dims(img_array, axis=0)
-  
-  # Process with models and get predictions
-  return process(img_array)
+    """Preprocess MNIST chuẩn: grayscale → crop → 20x20 → pad 28x28"""
+
+    # 1. Convert to grayscale
+    if image.mode != 'L':
+        image = image.convert('L')
+
+    # Convert to numpy
+    img = np.array(image).astype(np.uint8)
+
+    # 2. Binarize (simple threshold, MNIST style)
+    binary = (img < 128).astype(np.uint8) * 255
+
+    # 3. Auto-invert nếu nền sáng hơn chữ
+    white = np.count_nonzero(binary)
+    black = binary.size - white
+    if white > black:
+        binary = 255 - binary
+
+    # 4. Crop vùng có chữ
+    coords = np.column_stack(np.where(binary > 0))
+    if coords.size == 0:
+        final = np.zeros((28, 28), dtype=np.uint8)
+    else:
+        y_min, x_min = coords.min(axis=0)
+        y_max, x_max = coords.max(axis=0)
+        digit = binary[y_min:y_max+1, x_min:x_max+1]
+
+        # 5. Resize giữ tỉ lệ về 20×20
+        h, w = digit.shape
+        scale = 20 / max(w, h)
+        new_w, new_h = int(w * scale), int(h * scale)
+
+        digit_img = Image.fromarray(digit)
+        digit_small = digit_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+        # Tạo canvas 28×28 và padding
+        canvas = Image.new("L", (28, 28), 0)
+        x_pad = (28 - new_w) // 2
+        y_pad = (28 - new_h) // 2
+        canvas.paste(digit_small, (x_pad, y_pad))
+
+        final = np.array(canvas).astype(np.uint8)
+
+    # 6. Add batch dimension (1,28,28)
+    final = np.expand_dims(final, axis=0)
+
+    # 7. Gọi model
+    return process(final)
 
 @app.get("/")
 async def root():
