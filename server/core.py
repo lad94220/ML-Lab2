@@ -79,12 +79,12 @@ class SoftmaxRegression:
         self.loss_history = [] # Lịch sử loss trong quá trình huấn luyện
         self.val_acc_history = [] # Lịch sử accuracy trên tập validation
 
-        # --- CÁC BIẾN CHO EARLY STOPPING (THÊM MỚI) ---
-        self.patience_limit = patience      # <--- Giới hạn kiên nhẫn (ví dụ 5 lần)
-        self.patience_counter = 0           # <--- Đếm số lần thất bại liên tiếp
-        self.best_val_loss = float('inf')   # <--- Kỷ lục loss thấp nhất (khởi tạo là vô cùng)
-        self.best_W = None                  # <--- Lưu lại W tốt nhất
-        self.best_b = None                  # <--- Lưu lại b tốt nhất
+        # EARLY STOPPING 
+        self.patience_limit = patience      #  Giới hạn kiên nhẫn (ví dụ 5 lần)
+        self.patience_counter = 0           #  Đếm số lần thất bại liên tiếp
+        self.best_val_loss = float('inf')   #  Kỷ lục loss thấp nhất (khởi tạo là vô cùng)
+        self.best_W = None                  #  Lưu lại W tốt nhất
+        self.best_b = None                  #  Lưu lại b tốt nhất
     # Implement Softmax(z)
     def _softmax(self, z):
         z_safe = z - np.max(z, axis=0, keepdims=True) # Để tránh overflow
@@ -161,27 +161,23 @@ class SoftmaxRegression:
                 
                 print(f"[Epoch {epoch+1}/{self.epochs}] Loss: {loss:.4f}{val_msg}")
 
-                # --- ĐOẠN CẦN THÊM CHO EARLY STOPPING (CÁCH 3) ---
+                # EARLY STOPPING 
                 if X_val is not None:
-                    # Nếu val_loss giảm (tốt hơn kỷ lục cũ)
                     if val_loss < self.best_val_loss:
                         self.best_val_loss = val_loss
                         self.patience_counter = 0 # Reset bộ đếm
-                        # (Tùy chọn) Lưu lại bộ trọng số tốt nhất này
+                        # Lưu lại bộ trọng số tốt nhất 
                         self.best_W = self.W.copy() 
                         self.best_b = self.b.copy()
                     else:
-                        # Nếu val_loss không giảm (tệ đi hoặc dậm chân tại chỗ)
                         self.patience_counter += 1
-                        print(f"   -> Cảnh báo: Val Loss không giảm {self.patience_counter} lần.")
+                        print(f"Val Loss không giảm {self.patience_counter} lần.")
                         
-                        # KÉO PHANH: Nếu quá sức chịu đựng (ví dụ patience = 5)
                         if self.patience_counter >= self.patience_limit:
-                            print("!!! DỪNG SỚM (Early Stopping) !!!")
-                            # Khôi phục lại trọng số tốt nhất từng đạt được
+                            print("Early Stopping")
                             self.W = self.best_W 
                             self.b = self.best_b
-                            break # Thoát khỏi vòng lặp training ngay lập tức
+                            break 
 
     def predict(self, X):
         Z = np.dot(self.W, X) + self.b
@@ -233,62 +229,6 @@ def load_model():
   print(model_pca.W.shape, model_pca.b.shape)
   
   return model_raw, model_edges, model_pca, feature_engineer
-
-
-def process_image(image_data):
-    # 2. Chuyển sang Grayscale
-    gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
-
-    # 3. Dùng Otsu's Thresholding để tự động tìm ngưỡng tách nền và chữ
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-    # 4. TỰ ĐỘNG XÁC ĐỊNH NỀN (Logic quan trọng nhất)
-    # Đếm số lượng pixel trắng (255) và đen (0)
-    count_white = cv2.countNonZero(binary)
-    count_black = binary.size - count_white
-
-    # Nguyên tắc: Phần nào chiếm diện tích lớn hơn, đó là NỀN.
-    # Chúng ta cần Nền Đen (0) và Chữ Trắng (255).
-    if count_white > count_black:
-        # Nếu pixel trắng nhiều hơn -> Nền đang là màu trắng -> Cần đảo ngược
-        binary = cv2.bitwise_not(binary)
-    
-    # --- Tới đây ảnh chắc chắn là Nền Đen - Chữ Trắng ---
-    
-    # 5. Loại bỏ nhiễu (Optional nhưng khuyên dùng cho ảnh chụp/vẽ xấu)
-    # Dùng phép đóng (Closing) để nối liền các nét đứt nếu có
-    kernel = np.ones((3,3), np.uint8)
-    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-
-    # 6. Tìm Bounding Box (như cũ)
-    coords = cv2.findNonZero(binary)
-    if coords is None: # Trường hợp không tìm thấy nét vẽ nào
-        return np.zeros((1, 784)) 
-        
-    x, y, w, h = cv2.boundingRect(coords)
-    crop = binary[y:y+h, x:x+w]
-
-    # 7. Resize và Padding (như cũ)
-    final_img = np.zeros((28, 28), dtype=np.uint8)
-    
-    # Thêm 1 chút padding khi tính scale để chữ không chạm mép quá sát
-    scale = 20.0 / max(w, h) 
-    new_w, new_h = int(w * scale), int(h * scale)
-    
-    # Check để tránh lỗi resize ảnh quá nhỏ (0x0)
-    if new_w <= 0 or new_h <= 0: return np.zeros((1, 784))
-    
-    resized_crop = cv2.resize(crop, (new_w, new_h), interpolation=cv2.INTER_AREA)
-
-    x_offset = (28 - new_w) // 2
-    y_offset = (28 - new_h) // 2
-    final_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_crop
-
-    # 8. Normalize và Flatten
-    final_img = final_img / 255.0
-    final_img = final_img.reshape(1, 784)
-    
-    return final_img
 
 def predict(image_data):
   model_raw, model_edges, model_pca, feature_engineer = load_model()

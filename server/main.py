@@ -23,7 +23,6 @@ app.add_middleware(
 
 def process_image(image: Image.Image):
     """Preprocess MNIST chuẩn: grayscale → crop → 20x20 → pad 28x28"""
-
     # 1. Convert to grayscale
     if image.mode != 'L':
         image = image.convert('L')
