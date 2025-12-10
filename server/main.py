@@ -10,9 +10,7 @@ from typing import Optional
 app = FastAPI()
 
 origins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "https://handwriting-recognize.vercel.app"
+  "*"
 ]
 
 app.add_middleware(
