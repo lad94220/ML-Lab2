@@ -12,7 +12,7 @@ app = FastAPI()
 origins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://ml-lab2.vercel.app"
+  "https://handwriting-recognize.vercel.app"
 ]
 
 app.add_middleware(
