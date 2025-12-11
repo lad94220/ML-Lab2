@@ -22,8 +22,16 @@ app.add_middleware(
 )
 
 def process_image(image: Image.Image):
-    """Preprocess MNIST chuẩn: grayscale → crop → 20x20 → pad 28x28"""
-    # 1. Convert to grayscale
+    """
+    Preprocess image to match MNIST format:
+    - Convert to grayscale
+    - Threshold (binarize)
+    - Auto-invert if needed
+    - Crop the digit
+    - Resize to 20x20 while keeping aspect ratio
+    - Pad into a 28x28 centered canvas
+    """
+    # 1. Convert to grayscale (MNIST images are grayscale)
     if image.mode != 'L':
         image = image.convert('L')
 
@@ -33,14 +41,16 @@ def process_image(image: Image.Image):
     # 2. Binarize (simple threshold, MNIST style)
     binary = (img < 128).astype(np.uint8) * 255
 
-    # 3. Auto-invert nếu nền sáng hơn chữ
+    # 3. Auto-invert if background seems darker than the digit
     white = np.count_nonzero(binary)
     black = binary.size - white
     if white > black:
         binary = 255 - binary
 
-    # 4. Crop vùng có chữ
+    # 4. Crop the bounding box of the digit
     coords = np.column_stack(np.where(binary > 0))
+    
+    # If image is blank → return a zero-filled MNIST canvas
     if coords.size == 0:
         final = np.zeros((28, 28), dtype=np.uint8)
     else:
@@ -48,7 +58,7 @@ def process_image(image: Image.Image):
         y_max, x_max = coords.max(axis=0)
         digit = binary[y_min:y_max+1, x_min:x_max+1]
 
-        # 5. Resize giữ tỉ lệ về 20×20
+        # 5. Resize digit to fit into 20x20 (maintain ratio)
         h, w = digit.shape
         scale = 20 / max(w, h)
         new_w, new_h = int(w * scale), int(h * scale)
@@ -56,7 +66,7 @@ def process_image(image: Image.Image):
         digit_img = Image.fromarray(digit)
         digit_small = digit_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
-        # Tạo canvas 28×28 và padding
+        # 6. Create a 28x28 canvas and paste the resized digit into center
         canvas = Image.new("L", (28, 28), 0)
         x_pad = (28 - new_w) // 2
         y_pad = (28 - new_h) // 2
@@ -64,10 +74,10 @@ def process_image(image: Image.Image):
 
         final = np.array(canvas).astype(np.uint8)
 
-    # 6. Add batch dimension (1,28,28)
+    # 7. Add batch dimension → shape becomes (1, 28, 28)
     final = np.expand_dims(final, axis=0)
 
-    # 7. Gọi model
+    # 8. Call model for prediction
     return process(final)
 
 @app.get("/")
