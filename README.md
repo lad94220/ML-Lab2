@@ -1,3 +1,6 @@
+# Dataset:
+This is Google Drive link for mnist.npz dataset (included in repo): https://drive.google.com/drive/folders/1mscm0MMiEFoG5G5gw3EBpih70e-vSFaL?usp=sharing
+
 # ML-Lab2: Running Locally
 
 This guide explains how to set up and run the ML-Lab2 project locally.
